@@ -19,6 +19,8 @@ root.iconbitmap('icons/pypad.ico')
 filepath = os.getcwd() + "/tutorials/"
 textmode = 'static'
 loaded_text = StringVar()
+typed_text = ""
+corrections = 0
 count = 1
 start_time = 0
 
@@ -69,6 +71,8 @@ root.protocol('WM_DELETE_WINDOW',exit_tutor)
 def set_tuts():
 	global filepath
 	global textmode
+	global count
+	count = 1
 	textmode = 'static'
 	filepath = os.getcwd() + "/tutorials/tut"
 	ref_text()
@@ -76,6 +80,8 @@ def set_tuts():
 def set_para():
 	global filepath
 	global textmode
+	global count
+	count = 1
 	textmode = 'static'
 	filepath = os.getcwd() + "/paragraphs/para"
 	ref_text()
@@ -94,20 +100,22 @@ def load_text(count):
 		path = filepath + str(count) + ".txt"
 		s_list = []
 		with open(path) as f:
-			s = f.read().splitlines()
+			s_list = f.read().splitlines()
 		for temp in s_list:
 			s = s + temp + "\n"
 	else:
 		print("Do Nothing")#Write code for textmode auto
 	#Set timer to zero
-	return s
+	return s.rstrip()
 
 def next_text():
 	print('Loading next...')
 	global count
+	global start_time
 	count = count + 1
+	start_time = 0
 	try:
-		loaded_text.set(load_text(count)[0])
+		loaded_text.set(load_text(count))
 	except:
 		print("Loading next failed! Refreshing...")
 		count = count - 1
@@ -116,15 +124,19 @@ def next_text():
 def prev_text():
 	print('Loading previous...')
 	global count
+	global start_time
+	start_time = 0
 	if (count==1):
 		print('No previous text found! Refreshing...')
 	else:
 		count = count - 1
-	loaded_text.set(load_text(count)[0])
+	loaded_text.set(load_text(count))
 
 def ref_text():
+	global start_time
 	print('Refreshing...')
-	loaded_text.set(load_text(count)[0])
+	loaded_text.set(load_text(count))
+	start_time=0
 """
 #Highlight current text
 def highlight():
@@ -135,12 +147,36 @@ def export_csv():
 	print("Nothing exported")#Export user csv
 
 ######################################################################################
-
-#def record():
-	#Record each keypress
-
+"""
 def key(event):
-    print("pressed", repr(event.char))
+    print("Pressed", repr(event.char))
+"""
+
+def record(event):
+	#Record each keypress
+	global corrections
+	global start_time
+	global typed_text
+	print(repr(typed_text))
+	print(repr(loaded_text.get()))
+	if (start_time == 0):
+		start_time = time()
+		corrections = 0
+		typed_text = ""
+	c = event.char
+	if (c=='\x08' or c=='\r' or c=='\x01'):
+		corrections += 1
+		if(typed_text!=""):
+			typed_text = typed_text[:-1]
+	else:
+		typed_text = typed_text + str(c)
+	if (loaded_text.get() == typed_text):
+		print("Calculating...")
+		calculate(time(), start_time, corrections)
+		start_time = 0
+
+def calculate(end, begin, corr):
+	print("Complete this!")
 
 ######################################################################################
 newicon = PhotoImage(file='icons/new_file.gif')
@@ -205,12 +241,12 @@ b3.pack(fill=X, side=TOP)
 textlist.pack(side=LEFT, fill=Y)
 
 textframe = Frame(root)
-textframe.pack(side=RIGHT, fill=BOTH)
-text1 = Label(textframe, bd=10, textvariable=loaded_text, width=100, height=15)
-text1.pack(fill=X)
+textframe.pack(expand=YES, side=RIGHT, fill=BOTH)
+text1 = Message(textframe, textvariable=loaded_text, font=('Verdana',15), aspect=400, anchor='nw', relief=RIDGE)
+text1.pack(expand=YES, fill=BOTH)
 loaded_text.set("Hey! How you doing?")
-text2 = Text(textframe, width=100, undo=True)
-text2.bind("<Key>", key)
+text2 = Text(textframe, height=15, undo=True)
+text2.bind("<Key>", record)
 text2.pack(expand=YES, fill=BOTH)
 
 #Info Bar
