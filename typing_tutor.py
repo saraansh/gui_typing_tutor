@@ -18,11 +18,12 @@ root.iconbitmap('icons/pypad.ico')
 #Initial filepath
 filepath = os.getcwd() + "/tutorials/"
 textmode = 'static'
+stats = StringVar()
 loaded_text = StringVar()
 typed_text = ""
 corrections = 0
-count = 1
 start_time = 0
+count = 1
 
 #For popup items
 def popup(event):
@@ -46,15 +47,24 @@ def show_info_bar():
 	elif not val:
 		infobar.pack_forget()
 
-def display_metrics():
-	txt = ''
-	#if showln.get():
+def display_metrics(elapsed, wpm, error_rate, acc):
+	mins = int(elapsed/60)
+	seconds = int(elapsed - mins*60)
+	s1 = s2 = s3 = ""
+	if(mins==0):
+		s1 = "\n\nTime elapsed: " + str(seconds) + "s"
+	else:
+		s1 = "\n\nTime elapsed: " + str(mins) + "m " + str(seconds) + "s"
+	s2 = "\n\nAvg WPM: " + str(round(wpm,2))
+	s3 = "\n\nAccuracy: " + str(round(acc,2))
+	stats.set("</>  Metrics  </>" + s1 + s2 + s3 + '\n')
+	print(s1 + s2 + s3 + "\n\nError Rate = " + str(round(error_rate,2)))
 
 ######################################################################################
 
 #About Message
 def about():
-    messagebox.showinfo("About", "Typing Specialist by Saraansh and Deepak")
+    messagebox.showinfo("About", "TypeAI by Saraansh and Deepak")
 
 #Help Box
 def help_box(event=None):
@@ -172,11 +182,17 @@ def record(event):
 		typed_text = typed_text + str(c)
 	if (loaded_text.get() == typed_text):
 		print("Calculating...")
-		calculate(time(), start_time, corrections)
+		calculate(time(), start_time)
 		start_time = 0
+		text2.delete(0)
 
-def calculate(end, begin, corr):
+def calculate(end, begin):
 	print("Complete this!")
+	elapsed = (end - begin)
+	wpm = (0.2 * (len(typed_text) - 1) * 60) / elapsed
+	error_rate = (corrections) / (len(typed_text) + corrections)
+	accuracy = (1 - error_rate) * 100
+	display_metrics(elapsed, wpm, error_rate, accuracy)
 
 ######################################################################################
 newicon = PhotoImage(file='icons/new_file.gif')
@@ -231,23 +247,37 @@ actionbar.pack(expand=NO, fill=X)
 
 #Text type list
 textlist = Frame(root, width=50)
-b1 = Button(textlist, width=20, text="Tutorials",command=set_tuts)
+b1 = Button(textlist, width=20, text="\nTutorials\n",command=set_tuts)
 b1.pack(fill=X, side=TOP)
-b2 = Button(textlist,text="Paragraphs",command=set_para)
+b2 = Button(textlist,text="\nParagraphs\n",command=set_para)
 b2.pack(fill=X, side=TOP)
-b3 = Button(textlist,text="Generated",command=set_gen)
+b3 = Button(textlist,text="\nGenerated\n",command=set_gen)
 b3.pack(fill=X, side=TOP)
-#metrics_panel = Label(text) 
+mpanel = Message(textlist, textvariable=stats, relief=RIDGE)
+mpanel.pack(fill=X, side=BOTTOM) 
 textlist.pack(side=LEFT, fill=Y)
 
 textframe = Frame(root)
 textframe.pack(expand=YES, side=RIGHT, fill=BOTH)
 text1 = Message(textframe, textvariable=loaded_text, font=('Verdana',15), aspect=400, anchor='nw', relief=RIDGE)
 text1.pack(expand=YES, fill=BOTH)
-loaded_text.set("Hey! How you doing?")
-text2 = Text(textframe, height=15, undo=True)
-text2.bind("<Key>", record)
+loaded_text.set("Welcome to TypeAI!\n\nSelect a route and start typing!")
+text2 = Text(textframe, height=15, wrap=WORD, undo=True)
 text2.pack(expand=YES, fill=BOTH)
+
+#Binding Events
+text2.bind('<Control-N>', next_text)
+text2.bind('<Control-n>', next_text)
+text2.bind('<Control-P>', prev_text)
+text2.bind('<Control-p>', prev_text)
+text2.bind('<Control-R>', ref_text)
+text2.bind('<Control-r>', ref_text)
+text2.bind('<Control-1>', set_tuts)
+text2.bind('<Control-2>', set_para)
+text2.bind('<Control-3>', set_gen)
+text2.bind('<KeyPress-F1>', help_box)
+text2.bind("<Key>", record)
+
 
 #Info Bar
 infobar = Label(text2, text='Line: 1 | Column:0')
@@ -259,9 +289,8 @@ for i in ('export_csv'):
     #cmd = eval(i)
     cmenu.add_command(label=i, compound=LEFT, command=about)  
 cmenu.add_separator()
-text2.bind("<Button-3>", popup)
-
-text2.tag_configure("active_line", background="ivory2")
+#text2.bind("<Button-3>", popup)
+#text2.tag_configure("active_line", background="ivory2")
 root.mainloop()
 
 
