@@ -7,13 +7,21 @@ Created on Mon Mar 19 11:59:02 2018
 
 from tkinter import *
 from tkinter import messagebox, filedialog
+from pymongo import MongoClient
 from time import time
+import pandas as pd
 import os
 
+#root-window config
 root = Tk()
 root.geometry('800x500')
 root.title('TypeAI')
 root.iconbitmap('icons/pypad.ico')
+
+#mongodb config
+client = MongoClient('localhost', 27017)
+db = client['typeaidata']
+collection = db['typist1']
 
 #Program-specefic parameters
 filepath = os.getcwd() + "/tutorials/"
@@ -156,17 +164,21 @@ def highlight():
 
 # Function to export csv from mongoDB
 def export_csv():
-	print("Nothing exported")
+	query = collection.find()
+	df =  pd.DataFrame(list(query))
+	df.to_csv(os.getcwd() + "/exported.csv", index=None)
+	print("Exported CSV!")
 
 # Function to save test data to mongoDB
 def save_to_db():
-	print("Nothing saved")
-	print(raw_typed_text)
-	print(raw_time)
-	# Open mongodb and save following entries
-	# Save loaded text
-	# Save raw text and time
-	# Save wpm, corrections, accuracy
+	data = {"text": loaded_text.get(),
+			"typedlist": raw_typed_text,
+			"timedlist": raw_time,
+			"wpm": wpm,
+			"corrections": corrections,
+			"accuracy": accuracy}
+	id = collection.insert_one(data).inserted_id
+	print("Saved " + str(id))
 
 ######################################################################################
 """
@@ -261,6 +273,7 @@ filemenu.add_command(label="Next", accelerator='Ctrl+O', compound=LEFT, underlin
 filemenu.add_separator()
 filemenu.add_command(label="Refresh", accelerator='Ctrl+R', compound=LEFT, underline=0, command=ref_text)
 filemenu.add_separator()
+filemenu.add_command(label="Export CSV", accelerator='Ctrl+E', compound=LEFT, underline=0, command=export_csv)
 filemenu.add_command(label="Exit", accelerator='Alt+F4', command=exit_tutor)
 menubar.add_cascade(label="File", menu=filemenu)
 
