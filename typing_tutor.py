@@ -15,21 +15,27 @@ root.geometry('800x500')
 root.title('TypeAI')
 root.iconbitmap('icons/pypad.ico')
 
-#Initial filepath
+#Program-specefic parameters
 filepath = os.getcwd() + "/tutorials/"
 textmode = 'static'
+count = 1
 stats = StringVar()
 loaded_text = StringVar()
 typed_text = ""
-corrections = 0
 start_time = 0
-count = 1
 
-#For popup items
+#Database-specefic parameters
+raw_typed_text = []
+raw_time = []
+corrections = 0
+accuracy = 0.0
+wpm = 0
+
+# Function to display popup items
 def popup(event):
 	cmenu.tk_popup(event.x_root, event.y_root, 0)
 
-#Choose theme
+# Function to change theme
 def theme():
 	global bgc,fgc
 	val = themechoice.get()
@@ -39,7 +45,7 @@ def theme():
 	text1.config(bg=bgc, fg=fgc)
 	#typingblock.config()
 
-#Status Info Bar
+# Function to diplay status
 def show_info_bar():
 	val = showinbar.get()
 	if val:
@@ -47,30 +53,17 @@ def show_info_bar():
 	elif not val:
 		infobar.pack_forget()
 
-def display_metrics(elapsed, wpm, error_rate, acc):
-	mins = int(elapsed/60)
-	seconds = int(elapsed - mins*60)
-	s1 = s2 = s3 = ""
-	if(mins==0):
-		s1 = "\n\nTime elapsed: " + str(seconds) + "s"
-	else:
-		s1 = "\n\nTime elapsed: " + str(mins) + "m " + str(seconds) + "s"
-	s2 = "\n\nAvg WPM: " + str(round(wpm,2))
-	s3 = "\n\nAccuracy: " + str(round(acc,2))
-	stats.set("</>  Metrics  </>" + s1 + s2 + s3 + '\n')
-	print(s1 + s2 + s3 + "\n\nError Rate = " + str(round(error_rate,2)))
-
 ######################################################################################
 
-#About Message
+# About Message
 def about():
     messagebox.showinfo("About", "TypeAI by Saraansh and Deepak")
 
-#Help Box
+# Help Box
 def help_box(event=None):
     messagebox.showinfo("Help", "For help email bsaraansh@gmail.com", icon='question')
 
-#Exit
+# Exit
 def exit_tutor():
     if messagebox.askokcancel("Quit", "Do you really want to quit?"):
         root.destroy()
@@ -78,6 +71,7 @@ root.protocol('WM_DELETE_WINDOW',exit_tutor)
 
 ######################################################################################
 
+# Function to switch to tutorials
 def set_tuts():
 	global filepath
 	global textmode
@@ -87,6 +81,7 @@ def set_tuts():
 	filepath = os.getcwd() + "/tutorials/tut"
 	ref_text()
 
+# Function to switch to text extracts
 def set_para():
 	global filepath
 	global textmode
@@ -96,13 +91,15 @@ def set_para():
 	filepath = os.getcwd() + "/paragraphs/para"
 	ref_text()
 
+# Function to auto-generate text
 def set_gen():
 	global textmode
 	textmode = 'auto'
 	ref_text()
 
 ######################################################################################
-#Load the text
+
+# Function to load text
 def load_text(count):
 	print('Loading text...')
 	s=""
@@ -118,6 +115,7 @@ def load_text(count):
 	#Set timer to zero
 	return s.rstrip()
 
+# Function to load next text
 def next_text():
 	print('Loading next...')
 	global count
@@ -125,12 +123,13 @@ def next_text():
 	count = count + 1
 	start_time = 0
 	try:
-		loaded_text.set(load_text(count))
+		ref_text()
 	except:
 		print("Loading next failed! Refreshing...")
 		count = count - 1
 		ref_text()
 
+# Function to load previous text
 def prev_text():
 	print('Loading previous...')
 	global count
@@ -140,59 +139,97 @@ def prev_text():
 		print('No previous text found! Refreshing...')
 	else:
 		count = count - 1
-	loaded_text.set(load_text(count))
+	ref_text()
 
+# Function to reload the current text
 def ref_text():
 	global start_time
-	print('Refreshing...')
 	loaded_text.set(load_text(count))
 	start_time=0
+	text2.delete('1.0', END)
 """
-#Highlight current text
+# Function to highlight current text
 def highlight():
 	#Highlight the current word
 """
-#Export mongodb data to csv
+#####################################################################################
+
+# Function to export csv from mongoDB
 def export_csv():
-	print("Nothing exported")#Export user csv
+	print("Nothing exported")
+
+# Function to save test data to mongoDB
+def save_to_db():
+	print("Nothing saved")
+	print(raw_typed_text)
+	print(raw_time)
+	# Open mongodb and save following entries
+	# Save loaded text
+	# Save raw text and time
+	# Save wpm, corrections, accuracy
 
 ######################################################################################
 """
+# Function to detect keypresses
 def key(event):
     print("Pressed", repr(event.char))
 """
 
+# Function to display metrics
+def display_metrics(elapsed):
+	mins = int(elapsed/60)
+	seconds = int(elapsed - mins*60)
+	s1 = s2 = s3 = ""
+	if(mins==0):
+		s1 = "\n\nTime elapsed: " + str(seconds) + "s"
+	else:
+		s1 = "\n\nTime elapsed: " + str(mins) + "m " + str(seconds) + "s"
+	s2 = "\n\nAvg WPM: " + str(round(wpm,2))
+	s3 = "\n\nAccuracy: " + str(round(accuracy,2))
+	stats.set("</>  Metrics  </>" + s1 + s2 + s3 + '\n')
+	print(s1 + s2 + s3 + '\n')
+
+# Function to calculate metrics
+def calculate(end, begin):
+	global wpm, accuracy
+	elapsed = (end - begin)
+	wpm = (0.2 * (len(typed_text) - 1) * 60) / elapsed
+	error_rate = (corrections) / (len(typed_text) + corrections)
+	accuracy = (1 - error_rate) * 100
+	display_metrics(elapsed)
+
+# Function to record keypress
 def record(event):
-	#Record each keypress
 	global corrections
 	global start_time
 	global typed_text
-	print(repr(typed_text))
-	print(repr(loaded_text.get()))
+	global raw_typed_text
+	global raw_time
+	#Initializing default values
 	if (start_time == 0):
-		start_time = time()
-		corrections = 0
+		raw_time = []
+		raw_typed_text = []
 		typed_text = ""
+		corrections = 0
+		start_time = time()
+	#Storing the raw text & time for future work
 	c = event.char
+	raw_typed_text.append(c)
+	raw_time.append(time())
+	#Check for corrections
 	if (c=='\x08' or c=='\r' or c=='\x01'):
 		corrections += 1
 		if(typed_text!=""):
 			typed_text = typed_text[:-1]
 	else:
-		typed_text = typed_text + str(c)
+		typed_text += str(c)
+	#Comparing typed and test strings
 	if (loaded_text.get() == typed_text):
 		print("Calculating...")
 		calculate(time(), start_time)
+		save_to_db()
 		start_time = 0
-		text2.delete(0)
-
-def calculate(end, begin):
-	print("Complete this!")
-	elapsed = (end - begin)
-	wpm = (0.2 * (len(typed_text) - 1) * 60) / elapsed
-	error_rate = (corrections) / (len(typed_text) + corrections)
-	accuracy = (1 - error_rate) * 100
-	display_metrics(elapsed, wpm, error_rate, accuracy)
+		text2.delete('1.0', END)
 
 ######################################################################################
 newicon = PhotoImage(file='icons/new_file.gif')
@@ -254,7 +291,8 @@ b2.pack(fill=X, side=TOP)
 b3 = Button(textlist,text="\nGenerated\n",command=set_gen)
 b3.pack(fill=X, side=TOP)
 mpanel = Message(textlist, textvariable=stats, relief=RIDGE)
-mpanel.pack(fill=X, side=BOTTOM) 
+mpanel.pack(fill=X, side=BOTTOM)
+stats.set("</>  Metrics  </>\n\n\n\n\n\n\n")
 textlist.pack(side=LEFT, fill=Y)
 
 textframe = Frame(root)
