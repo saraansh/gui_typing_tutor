@@ -80,7 +80,7 @@ root.protocol('WM_DELETE_WINDOW',exit_tutor)
 ######################################################################################
 
 # Function to switch to tutorials
-def set_tuts():
+def set_tuts(event=None):
 	global filepath
 	global textmode
 	global count
@@ -90,7 +90,7 @@ def set_tuts():
 	ref_text()
 
 # Function to switch to text extracts
-def set_para():
+def set_para(event=None):
 	global filepath
 	global textmode
 	global count
@@ -100,7 +100,7 @@ def set_para():
 	ref_text()
 
 # Function to auto-generate text
-def set_gen():
+def set_gen(event=None):
 	global textmode
 	textmode = 'auto'
 	ref_text()
@@ -155,6 +155,7 @@ def ref_text(event=None):
 	loaded_text.set(load_text(count))
 	start_time=0
 	text2.delete('1.0', END)
+	text1.config(bg='#000000', fg='#FFFFFF')
 """
 # Function to highlight current text
 def highlight():
@@ -235,6 +236,12 @@ def record(event):
 			typed_text = typed_text[:-1]
 	else:
 		typed_text += str(c)
+	#Colour change for incorrect text
+	if (loaded_text.get()[0:len(typed_text)] == typed_text):
+		text1.config(bg='#000000', fg='#FFFFFF')
+	else:
+		#text1.tag_add('start', '1.0', text2.index(tk.INSERT))
+		text1.config(bg='#000000', fg='#FF00FF')
 	#Comparing typed and test strings
 	if (loaded_text.get() == typed_text):
 		print("Calculating...")
@@ -279,29 +286,29 @@ menubar.add_cascade(label="File", menu=filemenu)
 
 #About menu
 aboutmenu = Menu(menubar, tearoff=0)
-aboutmenu.add_command(label="About", command=about)
-aboutmenu.add_command(label="Help", command=help_box)
+aboutmenu.add_command(label="Help", accelerator='F1', compound=LEFT, image=newicon, underline=0, command=help_box)
+aboutmenu.add_command(label="About", accelerator='F12', compound=LEFT, image=newicon, underline=0, command=about)
 menubar.add_cascade(label="About", menu=aboutmenu)
 
 root.config(menu=menubar)
 
 #Action bar
 actionbar = Frame(root, height=25)
-b1 = Button(actionbar,text="Next",command=next_text)
+b1 = Button(actionbar, text="Next", command=next_text)
 b1.pack(side=RIGHT)
-b2 = Button(actionbar,text="Refresh",command=ref_text)
+b2 = Button(actionbar, text="Refresh", command=ref_text)
 b2.pack(side=RIGHT)
-b3 = Button(actionbar,text="Previous",command=prev_text)
+b3 = Button(actionbar, text="Previous", command=prev_text)
 b3.pack(side=RIGHT)
 actionbar.pack(expand=NO, fill=X)
 
 #Text type list
 textlist = Frame(root, width=50)
-b1 = Button(textlist, width=20, text="\nTutorials\n",command=set_tuts)
+b1 = Button(textlist, width=20, text="\nTutorials <F6>\n",command=set_tuts)
 b1.pack(fill=X, side=TOP)
-b2 = Button(textlist,text="\nParagraphs\n",command=set_para)
+b2 = Button(textlist,text="\nParagraphs <F7>\n",command=set_para)
 b2.pack(fill=X, side=TOP)
-b3 = Button(textlist,text="\nGenerated\n",command=set_gen)
+b3 = Button(textlist,text="\nGenerated <F8>\n",command=set_gen)
 b3.pack(fill=X, side=TOP)
 mpanel = Message(textlist, textvariable=stats, relief=RIDGE)
 mpanel.pack(fill=X, side=BOTTOM)
@@ -317,16 +324,34 @@ text2 = Text(textframe, height=15, wrap=WORD, undo=True)
 text2.pack(expand=YES, fill=BOTH)
 
 #Binding Events
+root.bind('<Control-N>', next_text)
+root.bind('<Control-n>', next_text)
+root.bind('<Control-P>', prev_text)
+root.bind('<Control-p>', prev_text)
+root.bind('<Control-R>', ref_text)
+root.bind('<Control-r>', ref_text)
+root.bind('<Prior>', prev_text)
+root.bind('<Next>', next_text)
+root.bind('<KeyPress-F5>', ref_text)
+root.bind('<KeyPress-F6>', set_tuts)
+root.bind('<KeyPress-F7>', set_para)
+root.bind('<KeyPress-F8>', set_gen)
+root.bind('<KeyPress-F1>', help_box)
+root.bind('<KeyPress-F12>', about)
 text2.bind('<Control-N>', next_text)
 text2.bind('<Control-n>', next_text)
 text2.bind('<Control-P>', prev_text)
 text2.bind('<Control-p>', prev_text)
 text2.bind('<Control-R>', ref_text)
 text2.bind('<Control-r>', ref_text)
-text2.bind('<Control-1>', set_tuts)
-text2.bind('<Control-2>', set_para)
-text2.bind('<Control-3>', set_gen)
+text2.bind('<Prior>', prev_text)
+text2.bind('<Next>', next_text)
+text2.bind('<KeyPress-F5>', ref_text)
+text2.bind('<KeyPress-F6>', set_tuts)
+text2.bind('<KeyPress-F7>', set_para)
+text2.bind('<KeyPress-F8>', set_gen)
 text2.bind('<KeyPress-F1>', help_box)
+text2.bind('<KeyPress-F12>', about)
 text2.bind("<Key>", record)
 
 
@@ -334,13 +359,16 @@ text2.bind("<Key>", record)
 infobar = Label(text2, text='Line: 1 | Column:0')
 infobar.pack(expand=NO, fill=None, side=RIGHT, anchor='se')
 
-#context popup menu
+#Context popup menu
 cmenu = Menu(text2,tearoff=0)
-for i in ('export_csv'):
-    #cmd = eval(i)
-    cmenu.add_command(label=i, compound=LEFT, command=about)  
+cmenu.add_command(label="Refresh <F5>", accelerator='F5', compound=LEFT, image=newicon, underline=0, command=ref_text)
 cmenu.add_separator()
-#text2.bind("<Button-3>", popup)
+cmenu.add_command(label="Next <PgDn>", accelerator='<Next>', compound=LEFT, image=newicon, underline=0, command=next_text)
+cmenu.add_command(label="Prev <PgUp>", accelerator='<Prior>', compound=LEFT, image=newicon, underline=0, command=prev_text)
+cmenu.add_separator()
+cmenu.add_command(label="Help", accelerator='F1', compound=LEFT, image=newicon, underline=0, command=help_box)  
+
+text2.bind("<Button-3>", popup)
 #text2.tag_configure("active_line", background="ivory2")
 root.mainloop()
 
