@@ -124,7 +124,7 @@ def load_text(count):
 	return s.rstrip()
 
 # Function to load next text
-def next_text():
+def next_text(event=None):
 	print('Loading next...')
 	global count
 	global start_time
@@ -138,7 +138,7 @@ def next_text():
 		ref_text()
 
 # Function to load previous text
-def prev_text():
+def prev_text(event=None):
 	print('Loading previous...')
 	global count
 	global start_time
@@ -150,7 +150,7 @@ def prev_text():
 	ref_text()
 
 # Function to reload the current text
-def ref_text():
+def ref_text(event=None):
 	global start_time
 	loaded_text.set(load_text(count))
 	start_time=0
@@ -310,7 +310,7 @@ textlist.pack(side=LEFT, fill=Y)
 
 textframe = Frame(root)
 textframe.pack(expand=YES, side=RIGHT, fill=BOTH)
-text1 = Message(textframe, textvariable=loaded_text, font=('Verdana',15), aspect=400, anchor='nw', relief=RIDGE)
+text1 = Message(textframe, textvariable=loaded_text, font=('Verdana',15), aspect=500, anchor='nw', relief=RIDGE)
 text1.pack(expand=YES, fill=BOTH)
 loaded_text.set("Welcome to TypeAI!\n\nSelect a route and start typing!")
 text2 = Text(textframe, height=15, wrap=WORD, undo=True)
