@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Mar 19 11:59:02 2018
+Created on Mon Apr 23 22:25:20 2018
 
 @author: Hopeless
 """
+
 
 from tkinter import *
 from tkinter import messagebox, filedialog
@@ -28,7 +29,7 @@ filepath = os.getcwd() + "/tutorials/"
 textmode = 'static'
 count = 1
 stats = StringVar()
-loaded_text = StringVar()
+incorrect_list = []
 typed_text = ""
 start_time = 0
 
@@ -152,7 +153,8 @@ def prev_text(event=None):
 # Function to reload the current text
 def ref_text(event=None):
 	global start_time
-	loaded_text.set(load_text(count))
+	text1.delete('1.0', END)
+	text1.insert('1.0', load_text(count))
 	start_time=0
 	text2.delete('1.0', END)
 	text1.config(bg='#000000', fg='#FFFFFF')
@@ -172,7 +174,7 @@ def export_csv():
 
 # Function to save test data to mongoDB
 def save_to_db():
-	data = {"text": loaded_text.get(),
+	data = {"text": text1.get('1.0', END),
 			"typedlist": raw_typed_text,
 			"timedlist": raw_time,
 			"wpm": wpm,
@@ -232,18 +234,26 @@ def record(event):
 	#Check for corrections
 	if (c=='\x08' or c=='\r' or c=='\x01'):
 		corrections += 1
+		print(corrections)
+		print(event)
+		if (text1.get('1.0', END)[0:len(typed_text)] != typed_text):
+			pos = incorrect_list.pop()
+			print('Removed' + pos)
+			text1.tag_remove('incorrect', pos, "%s+1c" % pos)
 		if(typed_text!=""):
 			typed_text = typed_text[:-1]
 	else:
 		typed_text += str(c)
-	#Colour change for incorrect text
-	if (loaded_text.get()[0:len(typed_text)] == typed_text):
-		text1.config(bg='#000000', fg='#FFFFFF')
-	else:
-		#text1.tag_add('start', '1.0', text2.index(tk.INSERT))
-		text1.config(bg='#000000', fg='#FF00FF')
+		#Colour change for incorrect text
+		if (text1.get('1.0', END)[0:len(typed_text)] != typed_text):
+			print(event)
+			pos = text2.index(INSERT)
+			incorrect_list.append(pos)
+			text1.tag_add('incorrect', pos, "%s+1c" % pos)
+			print('Added' + pos)
+	
 	#Comparing typed and test strings
-	if (loaded_text.get() == typed_text):
+	if (text1.get('1.0','end-1c') == typed_text):
 		print("Calculating...")
 		calculate(time(), start_time)
 		save_to_db()
@@ -317,10 +327,10 @@ textlist.pack(side=LEFT, fill=Y)
 
 textframe = Frame(root)
 textframe.pack(expand=YES, side=RIGHT, fill=BOTH)
-text1 = Message(textframe, textvariable=loaded_text, font=('Verdana',15), aspect=500, anchor='nw', relief=RIDGE)
-text1.pack(expand=YES, fill=BOTH)
-loaded_text.set("Welcome to TypeAI!\n\nSelect a route and start typing!")
-text2 = Text(textframe, height=15, wrap=WORD, undo=True)
+text1 = Text(textframe, height=13, wrap=WORD, font=('Verdana',12))
+text1.pack(fill=X)
+text1.insert('1.0', "Welcome to TypeAI!\n\nSelect a route and start typing!\n\nType accurately to save score.")
+text2 = Text(textframe, height=13, wrap=WORD, undo=True)
 text2.pack(expand=YES, fill=BOTH)
 
 #Binding Events
@@ -369,14 +379,8 @@ cmenu.add_separator()
 cmenu.add_command(label="Help", accelerator='F1', compound=LEFT, image=newicon, underline=0, command=help_box)  
 
 text2.bind("<Button-3>", popup)
+text1.tag_configure('incorrect', font=('Verdana',16))
+text1.tag_configure('correct', font=('Verdana',12))
 #text2.tag_configure("active_line", background="ivory2")
 root.mainloop()
-
-
-
-
-
-
-
-
 
