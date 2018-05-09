@@ -257,8 +257,7 @@ def record(event):
 		print("Calculating...")
 		calculate(time(), start_time)
 		save_to_db()
-		start_time = 0
-		text2.delete('1.0', END)
+		ref_text()
 
 ######################################################################################
 newicon = PhotoImage(file='icons/new_file.gif')
@@ -379,7 +378,7 @@ cmenu.add_separator()
 cmenu.add_command(label="Help", accelerator='F1', compound=LEFT, image=newicon, underline=0, command=help_box)  
 
 text2.bind("<Button-3>", popup)
-text1.tag_configure('incorrect', font=('Verdana',16))
+text1.tag_configure('incorrect', font=('Verdana',20))
 text1.tag_configure('correct', font=('Verdana',12))
 #text2.tag_configure("active_line", background="ivory2")
 root.mainloop()
